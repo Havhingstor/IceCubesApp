@@ -103,10 +103,7 @@ public class UserPreferences: ObservableObject {
   }
   
   private func getMinVisibility(_ vis1: Models.Visibility, _ vis2: Models.Visibility) -> Models.Visibility {
-    let no1 = Self.getIntOfVisibility(vis1)
-    let no2 = Self.getIntOfVisibility(vis2)
-    
-    return no1 < no2 ? vis1 : vis2
+    return vis1.rawValue < vis2.rawValue ? vis1 : vis2
   }
   
   public var postIsSensitive: Bool {
@@ -173,18 +170,5 @@ public class UserPreferences: ObservableObject {
     }
     copy.insert(isoCode, at: 0)
     recentlyUsedLanguages = Array(copy.prefix(3))
-  }
-  
-  public static func getIntOfVisibility(_ vis: Models.Visibility) -> Int {
-    switch vis {
-      case .direct:
-        return 0
-      case .priv:
-        return 1
-      case .unlisted:
-        return 2
-      case .pub:
-        return 3
-    }
   }
 }

@@ -86,8 +86,8 @@ struct ContentSettingsView: View {
         
         Picker("settings.content.default-reply-visibility", selection: $userPreferences.appDefaultReplyVisibility) {
           ForEach(Visibility.allCases, id: \.rawValue) { vis in
-            if UserPreferences.getIntOfVisibility(vis) <=
-                UserPreferences.getIntOfVisibility(userPreferences.postVisibility) {
+            if vis.rawValue <=
+                userPreferences.postVisibility.rawValue {
               Text(vis.title).tag(vis)
             }
           }

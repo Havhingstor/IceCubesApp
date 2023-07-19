@@ -18,11 +18,28 @@ public extension Application {
   }
 }
 
-public enum Visibility: String, Codable, CaseIterable, Hashable, Equatable, Sendable {
-  case pub = "public"
-  case unlisted
-  case priv = "private"
-  case direct
+public enum Visibility: Int, Codable, CaseIterable, Hashable, Equatable, Sendable {
+  case pub = 3
+  case unlisted = 2
+  case priv = 1
+  case direct = 0
+  
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let value = try container.decode(String.self)
+        switch value {
+            case "public":
+                self = .pub
+            case "unlisted":
+                self = .unlisted
+            case "private":
+                self = .priv
+            case "direct":
+                self = .direct
+            default:
+                throw DecodingError.dataCorrupted(.init(codingPath: container.codingPath, debugDescription: "\(value) is no valid visibility"))
+        }
+    }
 }
 
 public protocol AnyStatus {
