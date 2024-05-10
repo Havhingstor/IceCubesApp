@@ -115,11 +115,12 @@ public struct StatusDetailView: View {
 
   private func makeStatusesListView(statuses: [Status]) -> some View {
     ForEach(statuses) { status in
-      let (indentationLevel, extraInsets) = viewModel.getIndentationLevel(id: status.id, maxIndent: userPreferences.getRealMaxIndent())
+      let (indentationLevel, extraInsets, jumpUp) = viewModel.getIndentationLevel(id: status.id, maxIndent: userPreferences.getRealMaxIndent())
       let viewModel: StatusRowViewModel = .init(status: status,
                                                 client: client,
                                                 routerPath: routerPath,
-                                                scrollToId: $viewModel.scrollToId)
+                                                scrollToId: $viewModel.scrollToId,
+                                                showReplyView: jumpUp)
       let isFocused = self.viewModel.statusId == status.id
 
       StatusRowView(viewModel: viewModel, context: .detail)

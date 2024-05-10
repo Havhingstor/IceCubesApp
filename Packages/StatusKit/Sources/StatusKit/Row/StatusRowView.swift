@@ -63,11 +63,16 @@ public struct StatusRowView: View {
             EmptyView()
           }
         } else {
-          if !isCompact && context != .detail {
+          if !isCompact {
             Group {
-              StatusRowTagView(viewModel: viewModel)
-              StatusRowReblogView(viewModel: viewModel)
-              StatusRowReplyView(viewModel: viewModel)
+              if context != .detail {
+                StatusRowTagView(viewModel: viewModel)
+                StatusRowReblogView(viewModel: viewModel)
+                StatusRowReplyView(viewModel: viewModel)
+              } else if viewModel.showReplyView {
+                StatusRowReplyView(viewModel: viewModel)
+                      .padding(.bottom, 5)
+              }
             }
             .padding(.leading, theme.avatarPosition == .top ? 0 : AvatarView.FrameConfig.status.width + .statusColumnsSpacing)
           }

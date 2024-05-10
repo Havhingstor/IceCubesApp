@@ -22,6 +22,8 @@ import SwiftUI
 
   @ObservationIgnored
   var indentationLevelPreviousCache: [String: UInt] = [:]
+  @ObservationIgnored
+  var jumpsUp: [String: Bool] = [:]
 
   init(statusId: String) {
     state = .loading
@@ -112,13 +114,21 @@ import SwiftUI
 
   private func cacheReplyTopPrevious(statuses: [Status]) {
     indentationLevelPreviousCache = [:]
+    var lastValue = UInt(0)
     for status in statuses {
+      jumpsUp[status.id] = false
       if let inReplyToId = status.inReplyToId,
          let prevIndent = indentationLevelPreviousCache[inReplyToId]
       {
-        indentationLevelPreviousCache[status.id] = prevIndent + 1
+        let nextValue = prevIndent + 1
+        if lastValue > nextValue {
+          jumpsUp[status.id] = true
+        }
+        indentationLevelPreviousCache[status.id] = nextValue
+        lastValue = nextValue
       } else {
         indentationLevelPreviousCache[status.id] = 0
+        lastValue = 0
       }
     }
   }
@@ -139,13 +149,14 @@ import SwiftUI
     }
   }
 
-  func getIndentationLevel(id: String, maxIndent: UInt) -> (indentationLevel: UInt, extraInset: Double) {
+  func getIndentationLevel(id: String, maxIndent: UInt) -> (indentationLevel: UInt, extraInset: Double, jumpUp: Bool) {
     let level = min(indentationLevelPreviousCache[id] ?? 0, maxIndent)
+    let jumpUp = jumpsUp[id] ?? false
 
     let barSize = Double(level) * 2
     let spaceBetween = (Double(level) - 1) * 3
     let size = barSize + spaceBetween + 8
 
-    return (level, size)
+    return (level, size, jumpUp)
   }
 }

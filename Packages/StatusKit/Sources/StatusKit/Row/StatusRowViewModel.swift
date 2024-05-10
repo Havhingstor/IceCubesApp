@@ -41,6 +41,8 @@ import SwiftUI
   var localStatus: Status?
 
   private var scrollToId = nil as Binding<String?>?
+  
+  var showReplyView: Bool
 
   // The relationship our user has to the author of this post, if available
   var authorRelationship: Relationship? {
@@ -108,7 +110,8 @@ import SwiftUI
               isRemote: Bool = false,
               showActions: Bool = true,
               textDisabled: Bool = false,
-              scrollToId: Binding<String?>? = nil)
+              scrollToId: Binding<String?>? = nil,
+              showReplyView: Bool = false)
   {
     self.status = status
     finalStatus = status.reblog ?? status
@@ -118,6 +121,7 @@ import SwiftUI
     self.showActions = showActions
     self.textDisabled = textDisabled
     self.scrollToId = scrollToId
+    self.showReplyView = showReplyView
     if let reblog = status.reblog {
       isPinned = reblog.pinned == true
     } else {
