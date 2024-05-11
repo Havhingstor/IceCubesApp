@@ -77,7 +77,13 @@ public struct StatusDetailView: View {
           .onChange(of: viewModel.scrollToId) { _, newValue in
             if let newValue {
               viewModel.scrollToId = nil
-              proxy.scrollTo(newValue, anchor: .top)
+              if viewModel.scrollForUser {
+                withAnimation {
+                  proxy.scrollTo(newValue, anchor: .center)
+                }
+              } else {
+                proxy.scrollTo(newValue, anchor: .top)
+              }
             }
           }
           .onAppear {
@@ -113,18 +119,18 @@ public struct StatusDetailView: View {
     .navigationBarTitleDisplayMode(.inline)
   }
 
-  private func makeStatusesListView(statuses: [Status]) -> some View {
-    ForEach(statuses) { status in
+  private func makeStatusesListView(statuses: [any StatusLike]) -> some View {
+    ForEach(statuses, id: \.id) { status in
       let (indentationLevel, extraInsets, jumpUp) = viewModel.getIndentationLevel(id: status.id, maxIndent: userPreferences.getRealMaxIndent())
-      let viewModel: StatusRowViewModel = .init(status: status,
+      let viewModel: StatusRowViewModel = .init(status: status.baseStatus,
                                                 client: client,
                                                 routerPath: routerPath,
-                                                scrollToId: $viewModel.scrollToId,
-                                                showReplyView: jumpUp)
+                                                showReplyView: jumpUp,
+                                                parent: viewModel)
       let isFocused = self.viewModel.statusId == status.id
-
-      StatusRowView(viewModel: viewModel, context: .detail)
-        .id(status.id + (status.editedAt?.asDate.description ?? ""))
+      
+      AnyView(status.getView(viewModel: viewModel))
+        .id(status.scrollID)
         .environment(\.extraLeadingInset, !isCompact ? extraInsets : 0)
         .environment(\.indentationLevel, !isCompact ? indentationLevel : 0)
         .environment(\.isStatusFocused, isFocused)

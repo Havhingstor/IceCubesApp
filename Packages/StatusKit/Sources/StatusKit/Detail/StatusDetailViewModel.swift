@@ -5,7 +5,7 @@ import Network
 import SwiftUI
 
 @MainActor
-@Observable class StatusDetailViewModel {
+@Observable public class StatusDetailViewModel {
   public var statusId: String?
   public var remoteStatusURL: URL?
 
@@ -13,12 +13,13 @@ import SwiftUI
   var routerPath: RouterPath?
 
   enum State {
-    case loading, display(statuses: [Status]), error(error: Error)
+    case loading, display(statuses: [StatusLike]), error(error: Error)
   }
 
   var state: State = .loading
   var title: LocalizedStringKey = ""
   var scrollToId: String?
+  var scrollForUser = false
 
   @ObservationIgnored
   var indentationLevelPreviousCache: [String: UInt] = [:]
@@ -32,7 +33,7 @@ import SwiftUI
   }
 
   init(status: Status) {
-    state = .display(statuses: [status])
+    state = .display(statuses: [StatusHolder(baseStatus: status)])
     title = "status.post-from-\(status.account.displayNameWithoutEmojis)"
     statusId = status.id
     remoteStatusURL = nil
@@ -91,11 +92,13 @@ import SwiftUI
 
       if animate {
         withAnimation {
-          state = .display(statuses: statuses)
+          state = .display(statuses: statuses.map{StatusHolder(baseStatus: $0)})
         }
       } else {
-        state = .display(statuses: statuses)
-        scrollToId = data.status.id + (data.status.editedAt?.asDate.description ?? "")
+        state = .display(statuses: statuses.map{StatusHolder(baseStatus: $0)})
+        let statusHolder = StatusHolder(baseStatus: data.status)
+        scrollForUser = false
+        scrollToId = statusHolder.scrollID
       }
     } catch {
       if let error = error as? ServerError, error.httpCode == 404 {
@@ -158,5 +161,73 @@ import SwiftUI
     let size = barSize + spaceBetween + 8
 
     return (level, size, jumpUp)
+  }
+  
+  func removeStatuses(after beginStatus: String, to endStatus: String) {
+    let statusList: [StatusLike]
+    switch state {
+      case let .display(statuses):
+        statusList = statuses
+      default:
+        return
+    }
+    
+    let baseIndex = statusList.firstIndex { status in
+      status.id == beginStatus
+    }
+    let endIndex = statusList.firstIndex { status in
+      status.id == endStatus
+    }
+    if let baseIndex,
+       let endIndex,
+       baseIndex + 1 < endIndex
+    {
+      let firstIncluded = statusList[baseIndex + 1].baseStatus
+      var newStatus = NoStatus(baseStatus: firstIncluded, detailViewModel: self)
+      
+      var statusListCopy = statusList
+      for index in baseIndex + 1 ..< endIndex {
+        let status = statusList[index]
+        if let noStatus = status as? NoStatus,
+               noStatus.baseStatus.id == beginStatus {
+          newStatus.addStatusToIncluded(contentsOf: noStatus.includedStatuses)
+        } else {
+          newStatus.addStatusToIncluded(status)
+        }
+        
+        statusListCopy.remove(at: baseIndex + 1)
+      }
+  
+      statusListCopy.insert(newStatus, at: baseIndex + 1)
+      withAnimation {
+        state = .display(statuses: statusListCopy)
+      }
+    }
+  }
+  
+  func reloadAllStatuses(replacement: [StatusLike]) {
+    var statusList: [StatusLike]
+    switch state {
+      case let .display(statuses):
+        statusList = statuses
+      default:
+        return
+    }
+    guard let first = replacement.first,
+          let beginIndex = statusList.firstIndex(where: {first.id == $0.id}) else {return}
+    let afterIndex = statusList.index(after: beginIndex)
+    
+    if afterIndex != beginIndex {
+      let after = statusList[afterIndex]
+      scrollForUser = true
+      scrollToId = after.scrollID
+    }
+    
+    statusList.remove(at: beginIndex)
+    statusList.insert(contentsOf: replacement, at: beginIndex)
+    
+    withAnimation {
+      state = .display(statuses: statusList)
+    }
   }
 }

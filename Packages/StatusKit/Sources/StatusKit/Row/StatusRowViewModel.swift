@@ -40,9 +40,9 @@ import SwiftUI
   var localStatusId: String?
   var localStatus: Status?
 
-  private var scrollToId = nil as Binding<String?>?
   
   var showReplyView: Bool
+  var parentDetailViewModel: StatusDetailViewModel?
 
   // The relationship our user has to the author of this post, if available
   var authorRelationship: Relationship? {
@@ -110,8 +110,8 @@ import SwiftUI
               isRemote: Bool = false,
               showActions: Bool = true,
               textDisabled: Bool = false,
-              scrollToId: Binding<String?>? = nil,
-              showReplyView: Bool = false)
+              showReplyView: Bool = false,
+              parent parentDetailViewModel: StatusDetailViewModel? = nil)
   {
     self.status = status
     finalStatus = status.reblog ?? status
@@ -120,8 +120,8 @@ import SwiftUI
     self.isRemote = isRemote
     self.showActions = showActions
     self.textDisabled = textDisabled
-    self.scrollToId = scrollToId
     self.showReplyView = showReplyView
+    self.parentDetailViewModel = parentDetailViewModel
     if let reblog = status.reblog {
       isPinned = reblog.pinned == true
     } else {
@@ -176,8 +176,8 @@ import SwiftUI
 
   func goToParent() {
     guard let id = status.inReplyToId else { return }
-    if let _ = scrollToId {
-      scrollToId?.wrappedValue = id
+    if let parentDetailViewModel {
+      parentDetailViewModel.removeStatuses(after: id, to: status.id)
     } else {
       routerPath.navigate(to: .statusDetail(id: id))
     }
